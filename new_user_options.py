@@ -129,14 +129,14 @@ def process_image(message):
 def redirect_user_to_start(message):
     global list_of_user_data
     reply = message.text
-    if reply == USER_OPTIONS_YN[0]:
+    if reply == USER_OPTIONS_YN[1]:
         list_of_user_data = list_of_user_data[:1]
         print(list_of_user_data)
         markup = ReplyKeyboardRemove()
         msg = bot.send_message(message.chat.id, "Введи имя", reply_markup=markup)
         bot.register_next_step_handler(msg, process_username)
         os.remove(MEDIA_FILE_PATH)
-    elif reply == USER_OPTIONS_YN[1]:
+    elif reply == USER_OPTIONS_YN[0]:
         save_to_db(list_of_user_data)
         # next step
     else:
