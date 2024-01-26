@@ -204,15 +204,6 @@ def send_welcome(message: telebot.types.Message) -> None:
         bot.register_next_step_handler(message, user_options)
 
 
-@bot.message_handler(func=lambda message: not message.text.startswith('/start') and not message.text.startswith('/hello'))
-def echo_all(message):
-    user_id = message.from_user.id
-    if get_user(user_id, get_user_info=False):
-        bot.register_next_step_handler(message, user_options)
-    else:
-        bot.register_next_step_handler(message, send_welcome)
-
-
 def user_options(message: telebot.types.Message) -> None:
     markup = ReplyKeyboardMarkup(resize_keyboard=True)
     btn1 = KeyboardButton("Начать поиск")
@@ -249,7 +240,6 @@ def search_for_match(message: telebot.types.Message) -> None:
 
 
 def my_profile(message: telebot.types.Message) -> None:
-    markup = ReplyKeyboardRemove()
     user_id = message.chat.id
     user_data = get_user(str(user_id))
 
@@ -259,8 +249,14 @@ def my_profile(message: telebot.types.Message) -> None:
             file,
             caption=f"{user_data[1]}, {user_data[2]}, {user_data[6]} - {user_data[5]}",
         )
-    bot.send_message(message.chat.id, "Хотите изменить анкету?", reply_markup=markup)
-    # перезаписываем инфу про пользователя в базе данных с новыми данными
+    markup = ReplyKeyboardMarkup(resize_keyboard=True)
+    btn1 = KeyboardButton(USER_OPTIONS_YN[0])
+    btn2 = KeyboardButton(USER_OPTIONS_YN[1])
+    markup.row(btn1, btn2)
+    msg = bot.send_message(
+        message.chat.id, "Хотите изменить анкету?", reply_markup=markup
+    )
+    # Изменение анкеты
 
 
 if __name__ == "__main__":
