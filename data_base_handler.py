@@ -20,7 +20,7 @@ def save_to_db(user_data: list) -> None:
     )
     """
     )
-    c.execute(""" INSERT OR IGNORE INTO users VALUES (?,?,?,?,?,?,?,?) """, user_data)
+    c.execute(""" INSERT OR REPLACE INTO users VALUES (?,?,?,?,?,?,?,?) """, user_data)
     conn.commit()
     conn.close()
 
