@@ -1,11 +1,11 @@
 import os
 import telebot
-from data_base_handler import save_to_db
+from data_base_handler import save_to_db, get_user
 from telebot.types import ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove
 import re
 from dotenv import load_dotenv
+import sqlite3
 
-USER_EXISTS = None
 PREFERENCE_OPTIONS = ["Девушек", "Парней", "Не важно"]
 GENDER_OPTIONS = ["Девушка", "Парень"]
 USER_OPTIONS_YN = ["Да", "Нет"]
@@ -181,7 +181,7 @@ def redirect_user_to_start(message: telebot.types.Message) -> None:
         os.remove(MEDIA_FILE_PATH)
     elif reply == USER_OPTIONS_YN[0]:
         save_to_db(LIST_OF_USER_DATA)
-        # next step
+        bot.register_next_step_handler(message, user_options)
     else:
         msg = bot.send_message(
             message.chat.id,
@@ -190,17 +190,77 @@ def redirect_user_to_start(message: telebot.types.Message) -> None:
         bot.register_next_step_handler(msg, redirect_user_to_start)
 
 
-if not USER_EXISTS:
-
-    @bot.message_handler(commands=["start", "hello"])
-    def send_welcome(message: telebot.types.Message) -> None:
-        user_id = message.from_user.id
+@bot.message_handler(commands=["start", "hello"])
+def send_welcome(message: telebot.types.Message) -> None:
+    user_id = message.from_user.id
+    if get_user(str(user_id), get_user_info=False):
         LIST_OF_USER_DATA.append(user_id)
         print(user_id)
         msg = bot.send_message(
             message.chat.id, "Здравствуй, я бот для поиска знакомств. Введите свое имя"
         )
         bot.register_next_step_handler(msg, process_username)
+    else:
+        bot.register_next_step_handler(message, user_options)
+
+
+@bot.message_handler(func=lambda message: not message.text.startswith('/start') and not message.text.startswith('/hello'))
+def echo_all(message):
+    user_id = message.from_user.id
+    if get_user(user_id, get_user_info=False):
+        bot.register_next_step_handler(message, user_options)
+    else:
+        bot.register_next_step_handler(message, send_welcome)
+
+
+def user_options(message: telebot.types.Message) -> None:
+    markup = ReplyKeyboardMarkup(resize_keyboard=True)
+    btn1 = KeyboardButton("Начать поиск")
+    btn2 = KeyboardButton("Моя анкета")
+    btn3 = KeyboardButton("Посмотреть кто меня лайкнул")
+    btn4 = KeyboardButton("Режим рандомной переписки")
+    btn5 = KeyboardButton("Не хочу никого искать")
+    btn6 = KeyboardButton("Отправить донат разработчикам:)")
+    markup.row(btn1, btn2, btn3)
+    markup.row(btn4, btn5, btn6)
+    msg = bot.send_message(message.chat.id, "Выберите действие?", reply_markup=markup)
+    bot.register_next_step_handler(msg, redirect_func)
+
+
+def redirect_func(message: telebot.types.Message) -> None:
+    msg = message.text
+    match msg:
+        case "Начать поиск":
+            bot.register_next_step_handler(message, search_for_match)
+        case "Моя анкета":
+            bot.register_next_step_handler(message, my_profile)
+        case "Посмотреть кто меня лайкнул":
+            pass
+        case "Режим рандомной переписки":
+            pass
+        case "Не хочу никого искать":
+            pass
+        case "Отправить донат разработчикам:)":
+            pass
+
+
+def search_for_match(message: telebot.types.Message) -> None:
+    pass
+
+
+def my_profile(message: telebot.types.Message) -> None:
+    markup = ReplyKeyboardRemove()
+    user_id = message.chat.id
+    user_data = get_user(str(user_id))
+
+    with open(f"{user_data[7]}", "rb") as file:
+        bot.send_photo(
+            message.chat.id,
+            file,
+            caption=f"{user_data[1]}, {user_data[2]}, {user_data[6]} - {user_data[5]}",
+        )
+    bot.send_message(message.chat.id, "Хотите изменить анкету?", reply_markup=markup)
+    # перезаписываем инфу про пользователя в базе данных с новыми данными
 
 
 if __name__ == "__main__":
