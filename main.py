@@ -6,8 +6,7 @@ import re
 from dotenv import load_dotenv
 import sqlite3
 
-PREFERENCE_OPTIONS = ["Девушек", "Парней", "Не важно"]
-GENDER_OPTIONS = ["Девушка", "Парень"]
+GENDER_OPTIONS = ["Девушка", "Парень", 'Не важно']
 USER_OPTIONS_YN = ["Да", "Нет"]
 DEFAULT_ERROR_TEMPLATES = {
     "common": "Произошла ошибка",
@@ -60,12 +59,12 @@ def process_gender(message: telebot.types.Message) -> None:
     if gender == GENDER_OPTIONS[0] or gender == GENDER_OPTIONS[1]:
         LIST_OF_USER_DATA.append(gender)
         markup = ReplyKeyboardMarkup(resize_keyboard=True)
-        btn1 = KeyboardButton(PREFERENCE_OPTIONS[0])
-        btn2 = KeyboardButton(PREFERENCE_OPTIONS[1])
-        btn3 = KeyboardButton(PREFERENCE_OPTIONS[2])
+        btn1 = KeyboardButton(GENDER_OPTIONS[0])
+        btn2 = KeyboardButton(GENDER_OPTIONS[1])
+        btn3 = KeyboardButton(GENDER_OPTIONS[2])
         markup.row(btn1, btn2, btn3)
         msg = bot.send_message(
-            message.chat.id, "Кого вы хотите найти?", reply_markup=markup
+            message.chat.id, "Выберите пол просматриваемых анкет", reply_markup=markup
         )
         bot.register_next_step_handler(msg, process_preferences)
     else:
@@ -80,9 +79,9 @@ def process_preferences(message: telebot.types.Message) -> None:
     markup = ReplyKeyboardRemove()
     user_preferences = message.text
     if (
-        user_preferences == PREFERENCE_OPTIONS[0]
-        or user_preferences == PREFERENCE_OPTIONS[1]
-        or user_preferences == PREFERENCE_OPTIONS[2]
+        user_preferences == GENDER_OPTIONS[0]
+        or user_preferences == GENDER_OPTIONS[1]
+        or user_preferences == GENDER_OPTIONS[2]
     ):
         LIST_OF_USER_DATA.append(user_preferences)
         info = bot.send_message(
