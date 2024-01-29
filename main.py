@@ -1,12 +1,12 @@
 import os
 import telebot
-from data_base_handler import save_to_db, get_user
+from data_base_handler import save_to_db, get_user, search_for_user
 from telebot.types import ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove
 import re
 from dotenv import load_dotenv
 import sqlite3
 
-GENDER_OPTIONS = ["Девушка", "Парень", 'Не важно']
+GENDER_OPTIONS = ["Девушка", "Парень", 'Все']
 USER_OPTIONS_YN = ["Да", "Нет"]
 DEFAULT_ERROR_TEMPLATES = {
     "common": "Произошла ошибка",
@@ -202,7 +202,7 @@ def send_welcome(message: telebot.types.Message) -> None:
     else:
         bot.register_next_step_handler(message, user_options)
 
-
+@bot.message_handler(func=lambda message: message.text == "Вернуться в меню")
 def user_options(message: telebot.types.Message) -> None:
     markup = ReplyKeyboardMarkup(resize_keyboard=True)
     btn1 = KeyboardButton("Начать поиск")
@@ -214,30 +214,47 @@ def user_options(message: telebot.types.Message) -> None:
     markup.row(btn1, btn2, btn3)
     markup.row(btn4, btn5, btn6)
     msg = bot.send_message(message.chat.id, "Выберите действие?", reply_markup=markup)
-    bot.register_next_step_handler(msg, redirect_func)
 
 
-def redirect_func(message: telebot.types.Message) -> None:
-    msg = message.text
-    match msg:
-        case "Начать поиск":
-            bot.register_next_step_handler(message, search_for_match)
-        case "Моя анкета":
-            bot.register_next_step_handler(message, my_profile)
-        case "Посмотреть кто меня лайкнул":
-            pass
-        case "Режим рандомной переписки":
-            pass
-        case "Не хочу никого искать":
-            pass
-        case "Отправить донат разработчикам:)":
-            pass
+# def redirect_func(message: telebot.types.Message) -> None:
+#     msg = message.text
+#     match msg:
+#         case "Начать поиск":
+#             bot.register_next_step_handler(message, search_for_match)
+#         case "Моя анкета":
+#             bot.register_next_step_handler(message, my_profile)
+#         case "Посмотреть кто меня лайкнул":
+#             pass
+#         case "Режим рандомной переписки":
+#             pass
+#         case "Не хочу никого искать":
+#             pass
+#         case "Отправить донат разработчикам:)":
+#             pass
+#
 
 
-def search_for_match(message: telebot.types.Message) -> None:
-    pass
+@bot.message_handler(func=lambda message: message.text == "Начать поиск")
+def search_for_profiles(message: telebot.types.Message) -> None:
+    user_id = message.chat.id
+    list_of_users = search_for_user(str(user_id))
+    user_number = 0
+    print(list_of_users)
+    with open(f"{list_of_users[user_number][7]}", "rb") as file:
+        markup = ReplyKeyboardMarkup(resize_keyboard=True)
+        btn1 = KeyboardButton("\u2764\uFE0F")
+        btn2 = KeyboardButton("\U0001F47B")
+        btn3 = KeyboardButton('Вернуться в меню')
+        markup.row(btn1, btn2, btn3)
+        bot.send_photo(
+            message.chat.id,
+            file,
+            caption=f"{list_of_users[user_number][1]}, {list_of_users[user_number][2]}, {list_of_users[user_number][6]} - {list_of_users[user_number][5]}",reply_markup=markup
+        )
+        user_number += 1
 
 
+@bot.message_handler(func=lambda message: message.text == "Моя анкета")
 def my_profile(message: telebot.types.Message) -> None:
     user_id = message.chat.id
     user_data = get_user(str(user_id))
