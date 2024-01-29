@@ -52,3 +52,14 @@ def get_user(user_id: str, get_user_info=True) -> tuple or bool:
         return user_data
     else:
         return False if user_data else True
+
+
+def search_for_user(id: str) -> list:
+    conn = sqlite3.connect("main_database.db")
+    c = conn.cursor()
+    c.execute("SELECT age from users WHERE user_id=?", (id,))
+    user_age = int(c.fetchone()[0])
+    c.execute("SELECT * from users WHERE age < ? AND age > ? AND user_id != ?", (user_age + 2, user_age - 2, id))
+    users_for_search = c.fetchall()
+    conn.close()
+    return users_for_search
