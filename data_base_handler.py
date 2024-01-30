@@ -1,6 +1,7 @@
 import telebot
 import sqlite3
 from shared import user_data_dict
+from shared import done_for_user_dict
 
 
 def save_to_db(user_id: int) -> None:
@@ -69,7 +70,7 @@ def search_for_user(id: str) -> list:
     conn = sqlite3.connect("main_database.db")
     c = conn.cursor()
 
-    c.execute("SELECT age,preferences from users WHERE user_id=?", (id,))
+    c.execute("SELECT age, preferences FROM users WHERE user_id=?", (id,))
     result = c.fetchone()
     if result is None:
         conn.close()
@@ -79,16 +80,27 @@ def search_for_user(id: str) -> list:
     users_for_search = []
     if preferences == 'Все':
         preferences = ('Девушка', 'Парень')
+    else:
+        preferences = (preferences,)
+
+    print("ID занесен в базу", done_for_user_dict)
+    already_processed_users = set(done_for_user_dict.get(id, []))
+    print('alredy', already_processed_users)
+
     while x <= max_age_difference:
-        for preference in (preferences, ):
-            print(preference)
+        for preference in preferences:
             c.execute(
-                "SELECT * from users WHERE age <= ? AND age >= ? AND user_id != ? AND gender = ?",
-                (user_age + x, user_age - x, id, preference),
+                "SELECT * FROM users WHERE age <= ? AND age >= ? AND user_id != ? AND gender = ? AND user_id NOT IN (?)",
+                (user_age + x, user_age - x, id, preference, ','.join(already_processed_users))
             )
             new_users = c.fetchall()
             users_for_search.extend(new_users)
+
         x += 1
-        print(x)
+        #print(x)
+    
+    if not users_for_search:  
+        done_for_user_dict[id] = dict()
+
     conn.close()
     return users_for_search
