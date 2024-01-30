@@ -5,7 +5,8 @@ from telebot.types import ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemo
 import re
 from dotenv import load_dotenv
 import sqlite3
-from shared import user_data_dict
+from shared import *
+
 
 
 GENDER_OPTIONS = ["Девушка", "Парень", 'Все']
@@ -96,6 +97,7 @@ def process_preferences(message: telebot.types.Message) -> None:
         or user_preferences == GENDER_OPTIONS[2]
     ):
         user_data_dict[user_id].append(user_preferences)
+        print(user_data_dict)
         info = bot.send_message(
             message.chat.id, text="Напишите что-нибудь о себе", reply_markup=markup
         )
@@ -256,11 +258,21 @@ def search_for_profiles(message: telebot.types.Message) -> None:
             send_user_profile(message, list_of_users, user_number)
 
     elif msg in [SMILES['heart_smile'], SMILES['ghost_smile']]:
+        #print(user_numbers)
+        #found_user_id = []
+        found_user_id = (list_of_users[user_number][0]) 
+        print("list_of_users", list_of_users)
+        done_for_user_dict[user_id] = (found_user_id)
 
         if user_number < len(list_of_users):
             send_user_profile(message, list_of_users, user_number)
+    
 
-    user_numbers[user_id] = (user_number + 1) % len(list_of_users)
+    if len(list_of_users):
+        user_numbers[user_id] = (user_number + 1) % len(list_of_users)
+
+
+    #print("gfhdjgdg")
 
 def send_user_profile(message, list_of_users, user_number):
     with open(f"{list_of_users[user_number][7]}", "rb") as file:
