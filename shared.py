@@ -1,4 +1,6 @@
+user_data_dict = dict()
 
-user_data_dict = {}
 
-done_for_user_dict = dict()
+users_ids_for_search = []
+
+done_for_search = []
