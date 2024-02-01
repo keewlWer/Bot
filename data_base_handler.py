@@ -1,7 +1,6 @@
 import telebot
 import sqlite3
-from shared import user_data_dict
-from shared import done_for_user_dict
+from shared import *
 
 
 def save_to_db(user_id: int) -> None:
@@ -36,6 +35,7 @@ def save_to_db(user_id: int) -> None:
 
 
 def get_user(user_id: str, get_user_info=True) -> tuple or bool:
+
     conn = sqlite3.connect("main_database.db")
     c = conn.cursor()
     c.execute(
@@ -65,7 +65,6 @@ def get_user(user_id: str, get_user_info=True) -> tuple or bool:
 
 
 def search_for_user(id: str) -> list:
-    x = 2
     max_age_difference = 100
     conn = sqlite3.connect("main_database.db")
     c = conn.cursor()
@@ -77,30 +76,37 @@ def search_for_user(id: str) -> list:
         return []
 
     user_age, preferences = int(result[0]), result[1]
-    users_for_search = []
-    if preferences == 'Все':
-        preferences = ('Девушка', 'Парень')
+    users_ids_for_search = []
+
+    if preferences == "Все":
+        preferences = ("Девушка", "Парень")
     else:
         preferences = (preferences,)
 
-    print("ID занесен в базу", done_for_user_dict)
-    already_processed_users = set(done_for_user_dict.get(id, []))
-    print('alredy', already_processed_users)
+    query = """
+    SELECT user_id FROM users 
+    WHERE age BETWEEN ? AND ? AND user_id != ? AND gender IN ({})
+    """.format(
+        ",".join("?" * len(preferences))
+    )
 
-    while x <= max_age_difference:
-        for preference in preferences:
-            c.execute(
-                "SELECT * FROM users WHERE age <= ? AND age >= ? AND user_id != ? AND gender = ? AND user_id NOT IN (?)",
-                (user_age + x, user_age - x, id, preference, ','.join(already_processed_users))
-            )
-            new_users = c.fetchall()
-            users_for_search.extend(new_users)
+    for x in range(1, max_age_difference + 1):
+        params = [user_age - x, user_age + x, id] + list(preferences)
+        c.execute(query, params)
+        users_ids_for_search.extend([user[0] for user in c.fetchall()])
+        
+    print("before:",len(users_ids_for_search))
 
-        x += 1
-        #print(x)
     
-    if not users_for_search:  
-        done_for_user_dict[id] = dict()
+    user_ids_for_match = tuple((item for item in users_ids_for_search if item not in done_for_search))
+    print("after:", len(user_ids_for_match))
+
+    if not users_ids_for_search:
+        done_for_search.clear()
+
+    
+
+        
 
     conn.close()
-    return users_for_search
+    return user_ids_for_match
