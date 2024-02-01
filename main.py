@@ -245,6 +245,7 @@ def search_for_profiles(message: telebot.types.Message) -> None:
     user_id = message.chat.id
     msg = message.text
     list_of_users = search_for_user(str(user_id))
+    #print('ID найденых юзеров', list_of_users)
 
     if user_id not in user_numbers:
         user_numbers[user_id] = 0
@@ -257,12 +258,15 @@ def search_for_profiles(message: telebot.types.Message) -> None:
         else:
             send_user_profile(message, list_of_users, user_number)
 
-    elif msg in [SMILES['heart_smile'], SMILES['ghost_smile']]:
-        #print(user_numbers)
-        #found_user_id = []
-        found_user_id = (list_of_users[user_number][0]) 
-        print("list_of_users", list_of_users)
-        done_for_user_dict[user_id] = (found_user_id)
+    elif msg == SMILES['heart_smile']: 
+        
+
+        if user_number < len(list_of_users):
+            send_user_profile(message, list_of_users, user_number)
+        #Добавляем found_user_id в базу данных
+    
+    elif msg == SMILES['ghost_smile']:
+        
 
         if user_number < len(list_of_users):
             send_user_profile(message, list_of_users, user_number)
@@ -272,21 +276,32 @@ def search_for_profiles(message: telebot.types.Message) -> None:
         user_numbers[user_id] = (user_number + 1) % len(list_of_users)
 
 
-    #print("gfhdjgdg")
 
 def send_user_profile(message, list_of_users, user_number):
-    with open(f"{list_of_users[user_number][7]}", "rb") as file:
-        markup = ReplyKeyboardMarkup(resize_keyboard=True)
-        btn1 = KeyboardButton(SMILES['heart_smile'])
-        btn2 = KeyboardButton(SMILES['ghost_smile'])
-        btn3 = KeyboardButton('Вернуться в меню')
-        markup.row(btn1, btn2, btn3)
-        bot.send_photo(
-            message.chat.id,
-            file,
-            caption=f"{list_of_users[user_number][1]}, {list_of_users[user_number][2]}, {list_of_users[user_number][6]} - {list_of_users[user_number][5]}",
-            reply_markup=markup
-        )
+    found_user_id = list_of_users[user_number] 
+    print("найденый id:", found_user_id)
+    done_for_search.append(found_user_id)
+    print("id добавлен в done:", done_for_search)
+    user_data = get_user(str(found_user_id)) 
+    print("найденная data:", user_data)  
+
+    if user_data is not None:
+        with open(f"{user_data[7]}", "rb") as file:
+            markup = ReplyKeyboardMarkup(resize_keyboard=True)
+            btn1 = KeyboardButton(SMILES['heart_smile'])
+            btn2 = KeyboardButton(SMILES['ghost_smile'])
+            btn3 = KeyboardButton('Вернуться в меню')
+            markup.row(btn1, btn2, btn3)
+            bot.send_photo(
+                message.chat.id,
+                file,
+                caption=f"{user_data[1]}, {user_data[2]}, {user_data[6]} - {user_data[5]}",
+                reply_markup=markup
+            )
+    else:
+        print("Ошибка поиска подходящей анкеты")
+        bot.register_next_step_handler(message, search_for_profiles)
+
 
     
 @bot.message_handler(func=lambda message: message.text in "Моя анкета")
